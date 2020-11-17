@@ -1,0 +1,279 @@
+#!/bin/sh
+
+#   siena - Structural Image Evaluation, including Normalisation, of Atrophy
+#
+#   Stephen Smith, FMRIB Image Analysis Group
+#
+#   Copyright (C) 1999-2007 University of Oxford
+#
+#   Part of FSL - FMRIB's Software Library
+#   http://www.fmrib.ox.ac.uk/fsl
+#   fsl@fmrib.ox.ac.uk
+#
+#   Developed at FMRIB (Oxford Centre for Functional Magnetic Resonance
+#   Imaging of the Brain), Department of Clinical Neurology, Oxford
+#   University, Oxford, UK
+#
+#
+#   LICENCE
+#
+#   FMRIB Software Library, Release 6.0 (c) 2018, The University of
+#   Oxford (the "Software")
+#
+#   The Software remains the property of the Oxford University Innovation
+#   ("the University").
+#
+#   The Software is distributed "AS IS" under this Licence solely for
+#   non-commercial use in the hope that it will be useful, but in order
+#   that the University as a charitable foundation protects its assets for
+#   the benefit of its educational and research purposes, the University
+#   makes clear that no condition is made or to be implied, nor is any
+#   warranty given or to be implied, as to the accuracy of the Software,
+#   or that it will be suitable for any particular purpose or for use
+#   under any specific conditions. Furthermore, the University disclaims
+#   all responsibility for the use which is made of the Software. It
+#   further disclaims any liability for the outcomes arising from using
+#   the Software.
+#
+#   The Licensee agrees to indemnify the University and hold the
+#   University harmless from and against any and all claims, damages and
+#   liabilities asserted by third parties (including claims for
+#   negligence) which arise directly or indirectly from the use of the
+#   Software or the sale of any products based on the Software.
+#
+#   No part of the Software may be reproduced, modified, transmitted or
+#   transferred in any form or by any means, electronic or mechanical,
+#   without the express permission of the University. The permission of
+#   the University is not required if the said reproduction, modification,
+#   transmission or transference is done without financial return, the
+#   conditions of this Licence are imposed upon the receiver of the
+#   product, and all original and amended source code is included in any
+#   transmitted product. You may be held legally responsible for any
+#   copyright infringement that is caused or encouraged by your failure to
+#   abide by these terms and conditions.
+#
+#   You are not permitted under this Licence to use this Software
+#   commercially. Use for which any financial return is received shall be
+#   defined as commercial use, and includes (1) integration of all or part
+#   of the source code or the Software into a product for sale or license
+#   by or on behalf of Licensee to third parties or (2) use of the
+#   Software or any derivative of it for research with the final aim of
+#   developing software products for sale or license to a third party or
+#   (3) use of the Software or any derivative of it for research with the
+#   final aim of developing non-software products for sale or license to a
+#   third party, or (4) use of the Software to provide any service to an
+#   external organisation for which payment is received. If you are
+#   interested in using the Software commercially, please contact Oxford
+#   University Innovation ("OUI"), the technology transfer company of the
+#   University, to negotiate a licence. Contact details are:
+#   fsl@innovation.ox.ac.uk quoting Reference Project 9564, FSL.
+export LC_ALL=C
+
+Usage() {
+    cat <<EOF
+
+Usage: siena <input1> <input2> [options]
+
+  -o <output-dir>       : set output directory (default output is <input1>_to_<input2>_siena)
+  -d                    : debug (don't delete intermediate files)
+  -B "betopts"          : options to pass to BET brain extraction (inside double-quotes), e.g. -B "-f 0.3"
+  -2                    : two-class segmentation (don't segment grey and white matter separately)
+  -t2                   : T2-weighted input image (default T1-weighted)
+  -m                    : use standard-space masking as well as BET
+  -t <t>                : ignore from t (mm) upwards in MNI152/Talairach space
+  -b <b>                : ignore from b (mm) downwards in MNI152/Talairach space (b should probably be negative)
+  -S "sienadiffopts"    : options to pass to siena_diff timepoint differencing (inside double-quotes), e.g. -S "-s -i 20"
+  -V                    : run ventricle analysis (VIENA)
+  -v <mask image>       : optional user-supplied ventricle mask (default is ${FSLDIR}/data/standard/MNI152_T1_2mm_VentricleMask)
+
+EOF
+    exit 1
+}
+
+[ "$2" = "" ] && Usage
+[ `${FSLDIR}/bin/imtest $1` = 0 ] && Usage
+[ `${FSLDIR}/bin/imtest $2` = 0 ] && Usage
+Ao=`${FSLDIR}/bin/remove_ext $1`
+Bo=`${FSLDIR}/bin/remove_ext $2`
+thecommand="siena $@"
+shift 2
+
+outdir=${Ao}_to_${Bo}_siena
+vienadir=${outdir}/viena
+debug=0
+betopts=""
+sdopts=""
+sdo="-m"
+dostd=0
+stdmask=0
+stdroi=""
+origin3=37 # `fslval ${FSLDIR}/data/standard/MNI152_T1_2mm origin3`
+pixdim3=2  # `fslval ${FSLDIR}/data/standard/MNI152_T1_2mm pixdim3`
+Vmask="${FSLDIR}/data/standard/MNI152_T1_2mm_VentricleMask"
+do_viena=no
+
+while [ _$1 != _ ] ; do
+
+    if [ $1 = -d ] ; then
+        debug=1
+        ov=-ov
+        shift
+    elif [ $1 = -o ] ; then
+        outdir=$2
+	vienadir=${outdir}/viena
+        shift 2
+    elif [ $1 = -B ] ; then
+        betopts=$2
+        shift 2
+    elif [ $1 = -S ] ; then
+        sdopts=$2
+        shift 2
+    elif [ $1 = -2 ] ; then
+	sdo="$sdo -2"
+        shift
+    elif [ $1 = -t2 ] ; then
+	is_t2=" -s -t 2"
+        shift
+    elif [ $1 = -m ] ; then
+	stdmask=1
+	dostd=1
+        shift
+    elif [ $1 = -t ] ; then
+	dostd=1
+	stdt=`echo $2 | sed 's/-/_/g'`
+	stdt=`echo "10 k $stdt $pixdim3 / $origin3 + p" | dc -`
+	stdroi="$stdroi -roi 0 1000000 0 1000000 0 $stdt 0 1"
+	shift 2
+    elif [ $1 = -b ] ; then
+	dostd=1
+	stdb=`echo $2 | sed 's/-/_/g'`
+	stdb=`echo "10 k $stdb $pixdim3 / $origin3 + p" | dc -`
+	stdroi="$stdroi -roi 0 1000000 0 1000000 $stdb 1000000 0 1"
+	shift 2
+    elif [ $1 = -V ] ; then
+        do_viena=yes
+        shift
+    elif [ $1 = -v ] ; then
+        Vmask=$2
+        shift 2
+    else
+	Usage
+    fi
+
+done
+
+# ensure full path for ventriclemask (because of cd in scripts)
+if [ $do_viena = yes ] ; then
+    if [ `${FSLDIR}/bin/imtest ${Vmask}` = 0 ] ; then
+	echo "ERROR:: cannot find image ${Vmask}"
+	Usage
+    fi
+fi
+
+sdo="${sdo}${is_t2}"
+
+mkdir -p $outdir
+if [ $do_viena = yes ] ; then 
+  mkdir -p $vienadir
+fi
+${FSLDIR}/bin/imcp $Ao ${outdir}/A
+${FSLDIR}/bin/imcp $Bo ${outdir}/B
+cd $outdir
+
+# move tmp content to siena outdir
+cd ..
+mv -v ./tmp/* ./$outdir/
+rm -r ./tmp
+cd $outdir
+#
+
+A=A
+B=B
+
+echo '<HTML><HEAD><link REL="stylesheet" TYPE="text/css" href="file:'${FSLDIR}'/doc/fsl.css"><TITLE>FSL</TITLE></HEAD><BODY><hr><TABLE BORDER=0 WIDTH="100%"><TR><TD ALIGN=CENTER><H1>SIENA Report</H1>'${thecommand}'<TD ALIGN=RIGHT><a href="'${FSLDIR}'/doc/index.html"><IMG BORDER=0 SRC="'${FSLDIR}'/doc//images/fsl-logo.jpg"></a></TR></TABLE>' > report.html
+
+echo "-----------------------------------------------------------------------" >  report.siena
+echo ""                                                                        >> report.siena
+echo " SIENA - Structural Image Evaluation, using Normalisation, of Atrophy"   >> report.siena
+echo " part of FSL www.fmrib.ox.ac.uk/fsl"                                     >> report.siena
+echo " running longitudinal atrophy measurement: siena version 2.6"            >> report.siena
+echo " siena $@"                                                               >> report.siena
+echo ""                                                                        >> report.siena
+
+sdo="-m"
+sdopts=""
+
+echo "1  0  0  0\n0  1  0  0\n0  0  1  0\n 0  0  0  1" > ${B}_halfwayto_${A}.mat
+echo "1  0  0  0\n0  1  0  0\n0  0  1  0\n 0  0  0  1" > ${A}_halfwayto_${B}.mat
+echo "1  0  0  0\n0  1  0  0\n0  0  1  0\n 0  0  0  1" > ${B}_to_${A}.mat
+echo "1  0  0  0\n0  1  0  0\n0  0  1  0\n 0  0  0  1" > ${A}_to_${B}.mat
+
+echo `siena_cal $A $B 1.002` >> report.siena
+
+corr1=`siena_cal $A $B 1.002 $sdo $sdopts`
+corr2=`siena_cal $B $A 1.002 $sdo $sdopts`
+corr=`echo "10 k $corr1 $corr2 + 2.0 / p" | dc -`
+echo "corr1=$corr1 corr2=$corr2 corr=$corr" >> report.siena
+
+echo "" >> report.siena
+siena_diff ${B} ${A} -c $corr $sdo $sdopts >> report.siena
+pbvc_backward=`grep PBVC report.siena | tail -n 1 | awk '{print $2}' | sed 's/-/_/g'`
+
+echo "" >> report.siena
+${FSLDIR}/bin/siena_diff ${A} ${B} -c $corr $sdo $sdopts >> report.siena
+pbvc_forward=`grep PBVC report.siena | tail -n 1 | awk '{print $2}' | sed 's/-/_/g'`
+#echo "<hr><p><b>FAST tissue segmentation</b><br>These images show the tissue segmentation used to find the brain/non-brain boundary"
+
+echo "" >> report.siena
+pbvc_average=`echo "10 k $pbvc_forward $pbvc_backward - 2.0 / p" | dc -`
+echo "finalPBVC $pbvc_average %" >> report.siena
+echo "finalPBVC $pbvc_average %"
+cat >> report.html <<EOF
+
+<hr><p><b>SIENA Methods</b>
+
+<p>Two-timepoint percentage brain volume change was estimated with
+SIENA [Smith 2001, Smith 2002], part of FSL [Smith 2004]. SIENA starts
+by extracting brain and skull images from the two-timepoint whole-head
+input data [Smith 2002b]. The two brain images are then aligned to
+each other [Jenkinson 2001, Jenkinson 2002] (using the skull images to
+constrain the registration scaling); both brain images are resampled
+into the space halfway between the two. Next, tissue-type segmentation
+is carried out [Zhang 2001] in order to find brain/non-brain edge
+points, and then perpendicular edge displacement (between the two
+timepoints) is estimated at these edge points. Finally, the mean edge
+displacement is converted into a (global) estimate of percentage brain
+volume change between the two timepoints.
+
+<font size=-1><em>
+<P>[Smith 2001] S.M. Smith, N.&nbsp;De&nbsp;Stefano, M.&nbsp;Jenkinson, and P.M. Matthews.
+<BR>&nbsp;&nbsp;&nbsp;Normalised accurate measurement of longitudinal brain change.
+<BR>&nbsp;&nbsp;&nbsp;Journal of Computer Assisted Tomography, 25(3):466-475, May/June 2001.
+
+<P>[Smith 2002] S.M. Smith, Y.&nbsp;Zhang, M.&nbsp;Jenkinson, J.&nbsp;Chen, P.M. Matthews, A.&nbsp;Federico, and N.&nbsp;De&nbsp;Stefano.
+<BR>&nbsp;&nbsp;&nbsp;Accurate, robust and automated longitudinal and cross-sectional brain change analysis.
+<BR>&nbsp;&nbsp;&nbsp;NeuroImage, 17(1):479-489, 2002.
+
+<P>[Smith 2004] S.M. Smith, M.&nbsp;Jenkinson, M.W. Woolrich, C.F. Beckmann, T.E.J. Behrens, H.&nbsp;Johansen-Berg, P.R. Bannister, M.&nbsp;De&nbsp;Luca, I.&nbsp;Drobnjak, D.E. Flitney, R.&nbsp;Niazy, J.&nbsp;Saunders, J.&nbsp;Vickers, Y.&nbsp;Zhang, N.&nbsp;De&nbsp;Stefano, J.M. Brady, and P.M. Matthews.
+<BR>&nbsp;&nbsp;&nbsp;Advances in functional and structural MR image analysis and
+  implementation as FSL.
+<BR>&nbsp;&nbsp;&nbsp;NeuroImage, 23(S1):208-219, 2004.
+
+<P>[Smith 2002b] S.M. Smith.
+<BR>&nbsp;&nbsp;&nbsp;Fast robust automated brain extraction.
+<BR>&nbsp;&nbsp;&nbsp;Human Brain Mapping, 17(3):143-155, November 2002.
+
+<P>[Jenkinson 2001] M.&nbsp;Jenkinson and S.M. Smith.
+<BR>&nbsp;&nbsp;&nbsp;A global optimisation method for robust affine registration of brain images.
+<BR>&nbsp;&nbsp;&nbsp;Medical Image Analysis, 5(2):143-156, June 2001.
+
+<P>[Jenkinson 2002] M.&nbsp;Jenkinson, P.R. Bannister, J.M. Brady, and S.M. Smith.
+<BR>&nbsp;&nbsp;&nbsp;Improved optimisation for the robust and accurate linear registration and motion correction of brain images.
+<BR>&nbsp;&nbsp;&nbsp;NeuroImage, 17(2):825-841, 2002.
+
+<P>[Zhang 2001] Y.&nbsp;Zhang, M.&nbsp;Brady, and S.&nbsp;Smith.
+<BR>&nbsp;&nbsp;&nbsp;Segmentation of brain MR images through a hidden Markov random field model and the expectation maximization algorithm.
+<BR>&nbsp;&nbsp;&nbsp;IEEE Trans. on Medical Imaging, 20(1):45-57, 2001.
+
+EOF
+
