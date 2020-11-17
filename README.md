@@ -1,11 +1,13 @@
+This repository contains a dockerfile and code to perform the SIENA tool from FSL  package with the a proposed pipeline presented later.
 
-This repository contains a dockerfile which install 
+Some of the important requirements to perform the code are:
 - fsl v5.0.1
-- python3.6.4
-- SimpleITK
+- python v3.6.4
+- SimpleITK v2.0.1
 - the repository of [intensity normalization](https://github.com/jcreinhold/intensity-normalization)
+- [ROBEX](https://www.nitrc.org/projects/robex/)
 
-Also, copy and configure the files siena_standardisation.py and run_intensities.py where 
+Also, copy and configure the files siena_standardisation.py and run_intensities.py with:
 
 - z-score method
 - fuzzy c-means based white matter segmentation
@@ -15,7 +17,7 @@ Also, copy and configure the files siena_standardisation.py and run_intensities.
 - white stripe method
 - RAVEL method
 
-The methods are implemented for the FSL-SIENA v5.0.1 pipeline ![Alt](pipeline.png "pipeline before intensity standardisation before registration)
+The methods are implemented for the FSL-SIENA v5.0.1 pipeline ![pipeline](pipeline.png "pipeline before intensity standardisation before registration)
 
 To use the dockerfile in the repository it is **necessary** to have docker.io installed v19.03.8 or later and perform the following instructions
 
