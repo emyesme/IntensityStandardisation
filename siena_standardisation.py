@@ -14,7 +14,7 @@ from run_intensities import run_intensity_zscore, run_intensity_fcm, run_intensi
 #all_processes = []
 #BATCH_SIZE = 1
 DIRROBEX = join(sep, "ROBEX")
-DIRINPUT = getcwd()
+#DIRINPUT = getcwd()
 ISMETHODS = ["zscore", "fcm", "gmm", "kde", "hm", "ws", "RAVEL"]
 DIRSIENA = join(sep, "src", "siena2.1")
 ALLOWED_EXTENSIONS = {'nii.gz', 'nii', 'nifti.hdr'}
@@ -37,7 +37,13 @@ def robexmask(path, infile, outfile):
                              image.header), join(path, outfile))
     if not exists(join(path, "robex_masks")):
         makedirs(join(path, "robex_masks"))
-    shutil.move(outfile, join(path, 'robex_masks'))
+    try:
+        shutil.move(outfile, join(path, 'robex_masks'))
+    except:
+        e = sys.exc_info()[0]
+        print("Error: ", str(e))
+        print("Error: moving robex masks")
+        sys.exit(2)
 
 # run_intensity: string, string, string -> void
 # this method use the correspondent method for the input nifti image
@@ -61,6 +67,7 @@ def run_intensity(infile, outfolder, isMethod):
         rrun_intensity_delis(infile, outfolder)
     else:
         print("Error: incorrect selection of intensity standardisation method")
+        sys.exit(2)
 
 # perform the brain registration with the flirt tool from siena
 # flirt: string, array -> void
@@ -125,26 +132,37 @@ def createTmp(dir, fileA, fileB):
                                     "B_brain_mask.nii.gz", "A_valid_mask_with_B.nii.gz"))
     system(commandvalidmasks.format(dir, "A_brain_mask.nii.gz",
                                     "B_brain_mask.nii.gz", "B_valid_mask_with_A.nii.gz"))
-
-    shutil.move(join(dir, "A_brain_mask.nii.gz"),
-                join(dir, "tmp"))
-    shutil.move(join(dir, "B_brain_mask.nii.gz"),
-                join(dir, "tmp"))
-    shutil.move(join(dir, "A_valid_mask_with_B.nii.gz"),
-                join(dir, "tmp"))
-    shutil.move(join(dir, "B_valid_mask_with_A.nii.gz"),
-                join(dir, "tmp"))
-
+    try:
+        shutil.move(join(dir, "A_brain_mask.nii.gz"),
+                    join(dir, "tmp"))
+        shutil.move(join(dir, "B_brain_mask.nii.gz"),
+                    join(dir, "tmp"))
+        shutil.move(join(dir, "A_valid_mask_with_B.nii.gz"),
+                    join(dir, "tmp"))
+        shutil.move(join(dir, "B_valid_mask_with_A.nii.gz"),
+                    join(dir, "tmp"))
+    except:
+        e = sys.exc_info()[0]
+        print("Error: ", str(e))
+        print("Error: moving masks for siena")
+        sys.exit(2)
 
 # run_siena_command: string, string, tring, string -> void
 # receive two nifti images and the path of the output folder
 # and execute the siena command
+
+
 def run_siena_command(dir, fileA, fileB, output):
 
     command = 'cd {} && {} {} {} -o {} -d'
-
-    print(command.format(dir, DIRSIENA, fileA, fileB, output))
-    system(command.format(dir, DIRSIENA, fileA, fileB, output))
+    try:
+        print(command.format(dir, DIRSIENA, fileA, fileB, output))
+        system(command.format(dir, DIRSIENA, fileA, fileB, output))
+    except:
+        e = sys.exc_info()[0]
+        print("Error: ", str(e))
+        print("Error: during siena execution")
+        sys.exit(2)
 
 # run_robex: string, string, string -> void
 # perform the ROBEX (brain extraction) to the infile images
@@ -161,12 +179,17 @@ def run_robex(dir, infile, outfile):
     system(command.format(DIRROBEX,
                           infile,
                           outfile))
+    try:
+        shutil.move(join(dir, infile), join(dir, "Originals"))
 
-    shutil.move(join(dir, infile), join(dir, "Originals"))
-
-    if isfile(join(dir, infile.split(".")[0]+".nifti.hdr")):
-        shutil.move(join(dir, infile.split(".")[
-                    0]+".nifti.hdr"), join(dir, "Originals"))
+        if isfile(join(dir, infile.split(".")[0]+".nifti.img")):
+            shutil.move(join(dir, infile.split(".")[
+                        0]+".nifti.img"), join(dir, "Originals"))
+    except:
+        e = sys.exc_info()[0]
+        print("Error: ", str(e))
+        print("Error: moving files after robex execution")
+        sys.exit(2)
 
 # copyFiles: string, string, string -> void
 # create the nameDir folder for the output files
@@ -188,6 +211,7 @@ def copyFiles(inputFile, outputDir, nameDir):
         e = sys.exc_info()[0]
         print("Error: ", str(e))
         print("Error: making initial copy")
+        sys.exit(2)
 
 # allowed_files: string -> boolean
 # check if the file path has the allowed extensions
@@ -212,11 +236,9 @@ def allowed_file(file):
 
 def run_process(baselineFile, followupFile, isMethod, outputDir):
 
-    # 0. inicial copy
+    # 1. inicial copy
 
     print("1. Start initial copy")
-
-    print(outputDir)
 
     nameDir = "output_siena_"+isMethod
 
@@ -225,7 +247,7 @@ def run_process(baselineFile, followupFile, isMethod, outputDir):
 
     print("End initial copy")
 
-    # 1. robex
+    # 2. robex
     print("2. Start robex")
 
     for f in [baselineFile, followupFile]:
@@ -235,11 +257,11 @@ def run_process(baselineFile, followupFile, isMethod, outputDir):
                       join(outputDir, nameDir, f.split(".")[0]+"_robex.nii.gz"))
         else:
             print("Error: Not allowed extension of ", f)
-            break
+            sys.exit(2)
 
     print("End robex")
 
-    # 2. intensity standardisation
+    # 3. masks for intensity standardisation
     robexFiles = []
 
     _, _, files = next(walk(join(outputDir, nameDir)))
@@ -255,11 +277,13 @@ def run_process(baselineFile, followupFile, isMethod, outputDir):
                   join(outputDir, nameDir, robexFile.split(".")[0]+"_mask.nii.gz"))
 
     print("End masks for intensity standardisation")
-
+    # 4. intensity standardisation
     print("4. Start intensity standardisation")
 
     if isMethod == "hm":
-        run_intensity_hm(baselineFile, followupFile, join(outputDir, nameDir))
+        run_intensity_hm(join(outputDir, nameDir, baselineFile.split(".")[0] + "_robex.nii.gz"),
+                         join(outputDir, nameDir, followupFile.split(".")[0] + "_robex.nii.gz"),
+                         join(outputDir, nameDir))
     else:
         for robexFile in robexFiles:
             run_intensity(join(outputDir, nameDir, robexFile),
@@ -268,7 +292,7 @@ def run_process(baselineFile, followupFile, isMethod, outputDir):
 
     print("End intensity standardisation")
 
-    # 3. flirt
+    # 5. flirt
     print("5. Start flirt")
 
     isFiles = []
@@ -281,7 +305,7 @@ def run_process(baselineFile, followupFile, isMethod, outputDir):
 
     print("End flirt")
 
-    # 4. masks for sienaW
+    # 6. masks for siena
     print("6. Start masks siena")
 
     flirtFiles = []
@@ -305,7 +329,7 @@ def run_process(baselineFile, followupFile, isMethod, outputDir):
 
         print("End masks siena")
 
-        # 5. siena execution
+        # 7. siena execution
         print("7. Start siena")
 
         run_siena_command(join(outputDir, nameDir),
@@ -314,10 +338,11 @@ def run_process(baselineFile, followupFile, isMethod, outputDir):
                           "output_siena")
     else:
         print("Error: not found preprocessed files")
+        sys.exit(2)
     print("End siena")
 
 # array, int -> void
-#
+# create batches of the given size
 
 
 def create_batches(iterable, n=1):
@@ -359,17 +384,18 @@ def main():
         myopts, args = getopt.getopt(sys.argv[1:], "b:f:s:o:")
     except getopt.GetoptError as e:
         print(str(e))
-        print("""Usage: ./%s 
+        print("""Usage: %s 
         -b path to baseline MRI T1-w scan (nii or nii.gz file)
         -f path to follow up MRI T1-w scan (nii or nii.gz file)
-        -s intensity standardisation method to use, options:
-        zscore: z-zscore method
-        fcm: fuzzy c-means based white matter segmentation
-        gmm: gaussian mixture model based white matter segmentation
-        kde: kernel density estimation based white matter segmentation (recommmended)
-        hm: piecewise linear histogram matching
-        ws: white stripe method 
-        RAVEL: Removal of artificial voxel effect by linear regression
+        -s intensity standardisation method to use
+        Options:
+            zscore: z-zscore method
+            fcm: fuzzy c-means based white matter segmentation
+            gmm: gaussian mixture model based white matter segmentation
+            kde: kernel density estimation based white matter segmentation (recommended)
+            hm: piecewise linear histogram matching
+            ws: white stripe method 
+            RAVEL: Removal of artificial voxel effect by linear regression
         -o output directory""" % sys.argv[0])
         sys.exit(2)
 
@@ -383,20 +409,20 @@ def main():
         elif ((option == "-o") and exists(argument)):
             outputDir = argument
         else:
-            print("""Usage: ./%s 
+            print("""Usage: %s 
         -b path to baseline MRI T1-w scan (nii or nii.gz file)
-        - path to follow up MRI T1-w scan (nii or nii.gz file)
-        -s intensity standardisation method to use, options:
-        zscore: z-zscore method
-        fcm: fuzzy c-means based white matter segmentation
-        gmm: gaussian mixture model based white matter segmentation
-        kde: kernel density estimation based white matter segmentation (recommmended)
-        hm: piecewise linear histogram matching
-        ws: white stripe method 
-        RAVEL: Removal of artificial voxel effect by linear regression
-        DeLIS: Deep learning based intensity standardisation method (require tensorflow)
+        -f path to follow up MRI T1-w scan (nii or nii.gz file)
+        -s intensity standardisation method to use
+        Options:
+            zscore: z-zscore method
+            fcm: fuzzy c-means based white matter segmentation
+            gmm: gaussian mixture model based white matter segmentation
+            kde: kernel density estimation based white matter segmentation (recommended)
+            hm: piecewise linear histogram matching
+            ws: white stripe method 
+            RAVEL: Removal of artificial voxel effect by linear regression
         -o output directory""" % sys.argv[0])
-            break
+            sys.exit(2)
 
     # print("base: ", baselineFile)
     # print("followup: ", followupFile)
