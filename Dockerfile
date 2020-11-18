@@ -105,7 +105,7 @@ COPY siena2.1 /src/
 COPY ROBEX /ROBEX
 #RUN rm run_intensities.py siena_standardisation.py
 RUN cd /src/ && chmod +x siena_standardisation.py
-RUN cd /root/ && echo 'export PATH=$PATH":/src/bin"' >> .bashrc
+#RUN cd /root/ && echo 'export PATH=$PATH":/src/bin"' >> .bashrc
 #RUN cd /root/ && source .bashrc
 
 VOLUME ["/data"]

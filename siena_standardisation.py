@@ -56,15 +56,11 @@ def run_intensity(infile, outfolder, isMethod):
     elif isMethod == "fcm":
         run_intensity_fcm(infile, outfolder)
     elif isMethod == "gmm":
-        run_intensity_zscore(infile, outfolder)
+        run_intensity_gmm(infile, outfolder)
     elif isMethod == "kde":
         run_intensity_kde(infile, outfolder)
     elif isMethod == "ws":
         run_intensity_ws(infile, outfolder)
-    elif isMethod == "RAVEL":
-        run_intensity_ravel(infile, outfolder)
-    elif isMethod == "delis":
-        rrun_intensity_delis(infile, outfolder)
     else:
         print("Error: incorrect selection of intensity standardisation method")
         sys.exit(2)
@@ -284,6 +280,8 @@ def run_process(baselineFile, followupFile, isMethod, outputDir):
         run_intensity_hm(join(outputDir, nameDir, baselineFile.split(".")[0] + "_robex.nii.gz"),
                          join(outputDir, nameDir, followupFile.split(".")[0] + "_robex.nii.gz"),
                          join(outputDir, nameDir))
+    elif isMethod == "RAVEL":
+        run_intensity_ravel(join(outputDir, nameDir))
     else:
         for robexFile in robexFiles:
             run_intensity(join(outputDir, nameDir, robexFile),
