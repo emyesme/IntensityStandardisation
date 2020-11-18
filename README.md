@@ -10,27 +10,28 @@ Some of the important requirements to perform the code are:
 Also, copy and configure the files siena_standardisation.py and run_intensities.py with:
 
 - z-score method
-- fuzzy c-means based white matter segmentation
-- kernel density estimation based white matter segmentation
-- gaussian mixture model based white matter segmentation
+- fuzzy c-means based white matter segmentation method
+- kernel density estimation based white matter segmentation method
+- gaussian mixture model based white matter segmentation method
 - piece wise linear histogram matching method
 - white stripe method
 - RAVEL method
 
-The methods are implemented for the FSL-SIENA v5.0.1 pipeline ![pipeline](pipeline.png "pipeline before intensity standardisation before registration)
+The methods are implemented for the FSL-SIENA v5.0.1 pipeline ![pipeline](/pipeline.png)
 
 To use the dockerfile in the repository it is **necessary** to have docker.io installed v19.03.8 or later and perform the following instructions
 
 1. clone the repository
 2. Download [ROBEX](https://www.nitrc.org/projects/robex/)
-2. Move the folder named ROBEX to the cloned repository
-2. Inside the local repository execute ```docker build . ``` **this is going to take some time (hours)**
-4. To bind the docker container to the folder data, use 
+3. Move the folder named ROBEX to the cloned repository
+4. Inside the local repository execute ```docker build . ``` 
+**this is going to take some time (hours)**
+5. To bind the docker container to the folder data, use 
 ```docker run -it --mount type=bind,src=/path/to/repository/data,dst=/data container_id_or_tag```
 
-To use the pipeline, here is an example with the kernel density estimation method:
+To use the pipeline, here is an example with the kernel density estimation method from the data folder:
 
-``` ./src/siena_standardisation.py -b mri_image_1.nii.gz -f mri_image_2.nii.gz -s kde -o /data/ ```
+``` ./../src/siena_standardisation.py -b mri_image_1.nii.gz -f mri_image_2.nii.gz -s kde -o /data/ ```
 
 Instructions:
 
