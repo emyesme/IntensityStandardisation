@@ -1,5 +1,7 @@
 This repository contains a dockerfile and code to perform the SIENA tool from FSL  package with the a proposed pipeline presented later.
 
+## Requirements
+
 Some of the important requirements to perform the code are:
 - fsl v5.0.1
 - python v3.6.4
@@ -19,6 +21,8 @@ The dockerfile copy and configure the files siena_standardisation.py and run_int
 
 The methods are implemented for the FSL-SIENA v5.0.1 pipeline ![pipeline](/pipeline.png)
 
+## Instructions
+
 To use the dockerfile in the repository it is **necessary** to have docker.io installed v19.03.8 or later and perform the following instructions
 
 1. clone the repository
@@ -28,6 +32,8 @@ To use the dockerfile in the repository it is **necessary** to have docker.io in
 **this is going to take some time (hours)**
 5. To bind the docker container to the folder data, use 
 ```docker run -it --mount type=bind,src=/path/to/repository/data,dst=/data container_id_or_tag```
+
+## Usage
 
 To use the pipeline, here is an example with the kernel density estimation method from the data folder:
 
