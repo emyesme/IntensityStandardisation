@@ -61,12 +61,10 @@ Usage:  ./src/siena_standardisation.py -b path to baseline MRI T1-w scan (nii or
 
 ## Reference
 
-[1] M. Jenkinson, C. F. Beckmann, T. E. Behrens, M. W. Woolrich, and S. M. Smith, “Fsl,” Neuroimage, vol. 62, no. 2, pp. 782–790, 2012.
-[2] R. Beare, B. Lowekamp, and Z. Yaniv, “Image segmentation, registration and characterization in r with simpleitk,” Journal of statistical software, vol. 86, 2018.
-[3] J. C. Reinhold, B. E. Dewey, A. Carass, and J. L. Prince, “Evaluating the impact of intensity normalization on MR image synthesis,” in Medical Imaging 2019: Image Processing, vol. 10949, p. 109493H, International Society for Optics and Photonics, 2019.
-[4] J. E. Iglesias, C.-Y. Liu, P. M. Thompson, and Z. Tu, “Robust brain extraction across datasets and comparison with publicly available methods,” IEEE transactions on medical imaging, vol. 30, no. 9, pp. 1617–1634, 2011.
-[5] L. G. Nyúl, J. K. Udupa, and X. Zhang, “New variants of a method of mri scale standardization,” IEEE transactions on medical imaging, vol. 19, no. 2, pp. 143–150, 2000.
-[6] R. T. Shinohara, E. M. Sweeney, J. Goldsmith, N. Shiee, F. J. Mateen, P. A. Calabresi, S. Jarso, D. L. Pham, D. S. Reich, C. M. Crainiceanu, et al., “Statistical normalization techniques for magnetic resonance imaging,” NeuroImage: Clinical, vol. 6, pp. 9–19, 2014.
-[7] J.-P. Fortin, E. M. Sweeney, J. Muschelli, C. M. Crainiceanu, R. T. Shinohara, A. D. N. Ini-
-tiative, et al., “Removing inter-subject technical variability in magnetic resonance imag-
-ing studies,” NeuroImage, vol. 132, pp. 198–212, 2016.
+[1] M. Jenkinson, C. F. Beckmann, T. E. Behrens, M. W. Woolrich, and S. M. Smith, “Fsl,” Neuroimage, vol. 62, no. 2, pp. 782–790, 2012.<br>
+[2] R. Beare, B. Lowekamp, and Z. Yaniv, “Image segmentation, registration and characterization in r with simpleitk,” Journal of statistical software, vol. 86, 2018.<br>
+[3] J. C. Reinhold, B. E. Dewey, A. Carass, and J. L. Prince, “Evaluating the impact of intensity normalization on MR image synthesis,” in Medical Imaging 2019: Image Processing, vol. 10949, p. 109493H, International Society for Optics and Photonics, 2019.<br>
+[4] J. E. Iglesias, C.-Y. Liu, P. M. Thompson, and Z. Tu, “Robust brain extraction across datasets and comparison with publicly available methods,” IEEE transactions on medical imaging, vol. 30, no. 9, pp. 1617–1634, 2011.<br>
+[5] L. G. Nyúl, J. K. Udupa, and X. Zhang, “New variants of a method of mri scale standardization,” IEEE transactions on medical imaging, vol. 19, no. 2, pp. 143–150, 2000.<br>
+[6] R. T. Shinohara, E. M. Sweeney, J. Goldsmith, N. Shiee, F. J. Mateen, P. A. Calabresi, S. Jarso, D. L. Pham, D. S. Reich, C. M. Crainiceanu, et al., “Statistical normalization techniques for magnetic resonance imaging,” NeuroImage: Clinical, vol. 6, pp. 9–19, 2014.<br>
+[7] J.-P. Fortin, E. M. Sweeney, J. Muschelli, C. M. Crainiceanu, R. T. Shinohara, A. D. N. Initiative, et al., “Removing inter-subject technical variability in magnetic resonance imaging studies,” NeuroImage, vol. 132, pp. 198–212, 2016. <br>
