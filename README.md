@@ -28,14 +28,14 @@ To use the dockerfile in the repository it is **necessary** to have docker.io in
 1. clone the repository
 2. Download [ROBEX](https://www.nitrc.org/projects/robex/)
 3. Move the folder named ROBEX to the cloned repository
-4. Inside the local repository execute ```docker build . ``` 
+4. Inside the local repository execute ```docker build . ``` <br/> 
 **this is going to take some time (hours)**
-5. To bind the docker container to the folder data, use 
+5. To bind the docker container to the folder data, use <br/> 
 ```docker run -it --mount type=bind,src=/path/to/repository/data,dst=/data container_id_or_tag```
 
 ## Usage
 
-To use the pipeline, here is an example with the kernel density estimation method from the data folder:
+To use the pipeline, here is an example with the kernel density estimation method from the data folder:<br/> 
 
 ``` ./../src/siena_standardisation.py -b mri_image_1.nii.gz -f mri_image_2.nii.gz -s kde -o /data/ ```
 
